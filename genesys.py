@@ -45,6 +45,7 @@ def entity_infos(auth, **kwargs):
         entity = __get_entity_by_hostname(kwargs.get('hostname'), entities)
         if entity is None: return 'Entity not found'
         entity.update(__get_metrics(entity.get('id'), auth.get('access_token')))
+        entity.update({ 'trunks': __get_trunks(auth, entity.get('id'))})
         if kwargs.get('calculate'):
             if 'networks' in entity:
                 entity['networks'] = calculate_networks(entity.get('networks'))
@@ -94,6 +95,23 @@ def calculate_networks(networks):
                 'interfaceName': network['ifname']
             })
     return calculated
+
+def __get_trunks(auth, edge_id, trunk_type=None):
+    EDGE_TRUNKS_LIST_URL = f"https://api.mypurecloud.com/api/v2/telephony/providers/edges/{edge_id}/trunks?pageSize=100"
+
+    headers = {
+            'Authorization': f"Bearer {auth.get('access_token')}"
+    }
+    parammeters = {
+        'pageSize': 100
+    }
+
+    if trunk_type is not None:
+        parammeters.update({'trunkType': trunk_type})
+    
+    request = requests.get(EDGE_TRUNKS_LIST_URL, headers=headers, params=parammeters)
+    if request.status_code == 200: return request.json()
+
 
 if __name__ == '__main__':
     load_dotenv()
