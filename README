@@ -1,0 +1,77 @@
+# Script de monitoria de URA Genesys
+
+[genesys.com](https://www.genesys.com/pt-br/capabilities/interactive-voice-response-ivr)
+
+Este script foi projetado para ser utilizado em conjunto com a ferramenta de monitoria Zabbix.
+
+# Como utilizar
+## Lista de comandos e filtros JSONPath
+
+### Discos do Edge
+
+**Comando de metricas para discos**
+> python genesys.py [HOSTNAME] -f disks -c 1
+
+**Configuração da chave para discos**
+> genesys.edges.filtered[{HOST.NAME},disks]
+
+**Filtrar a porcentagem do discos**
+> $.disks[0].total
+
+
+### Memória do Edge
+
+**Comando de metricas para mmória**
+> python genesys.py [HOSTNAME] -f memory -c 1
+
+**Configuração da chave para mmória**
+> genesys.edges.filtered[{HOST.NAME},memory]
+
+**Filtrar a porcentagem da memória fisica**
+> $.memory[0].total
+
+
+### Rede do Edge
+
+**Comando de metricas para networks**
+> python genesys.py [HOSTNAME] -f networks -c 1
+
+**Configuração da chave para networks**
+> genesys.edges.filtered[{HOST.NAME},networks]
+
+**Filtrar a porcentagem da networks**
+> $.networks[0].total
+
+
+### Processamentos do Edge
+
+**Comando de metricas para processamento**
+> python genesys.py [HOSTNAME] -f processors -c 1
+
+**Configuração da chave para processors**
+> genesys.edges.filtered[{HOST.NAME},processors]
+
+**Filtrar a porcentagem da processors**
+> $.processors[0].activeTimePct
+
+
+### Troncos do Edge
+
+**Comando de troncos do Edge**
+> python genesys.py [HOSTNAME] -f trunks
+
+**Filtrar troncos fora de serviço**
+
+*Para ver troncos externos mude o filtro de PHONE para EXTERNAL*
+
+> $.trunks.entities[?(@.trunkType == "PHONE" && !@.inService)]")]
+
+**Filtrar troncos em serviços e conectados**
+> $.trunks.entities[?(@.trunkType == "PHONE" && @.inService && @.connectedStatus.connected)]
+
+**Filtrar troncos fora de serviços e desconectado**
+> $.trunks.entities[?(@.trunkType == "PHONE" && !@.inService && !@.connectedStatus.connected)]
+
+**Filtrar troncos em serviço, conectados mas que há um problema**
+> $.trunks.entities[?(@.trunkType == "PHONE" && @.inService && @.connectedStatus.connected)].optionsStatus[?(!@.optionState)]")]
+
