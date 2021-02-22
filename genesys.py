@@ -1,7 +1,7 @@
 import os
 import argparse
 import requests
-import pprint
+import json
 
 from dotenv import load_dotenv
 
@@ -43,6 +43,7 @@ def entity_infos(auth, **kwargs):
     entities = edges.get('entities')
     if('hostname' in kwargs):
         entity = __get_entity_by_hostname(kwargs.get('hostname'), entities)
+        if entity is None: return 'Entity not found'
         entity.update(__get_metrics(entity.get('id'), auth.get('access_token')))
         if kwargs.get('calculate'):
             if 'networks' in entity:
@@ -53,8 +54,8 @@ def entity_infos(auth, **kwargs):
                 entity['disks'] = calculate_disks(entity.get('disks'))
 
         if('filter' in kwargs and kwargs.get('filter') is not None):
-            return entity.get(kwargs['filter'])
-        return entity
+            return json.dumps({kwargs.get('filter'): entity.get(kwargs['filter'])})
+        return json.dumps(entity)
 
 
 def calculate_memories(memories):
@@ -104,14 +105,16 @@ if __name__ == '__main__':
     parser.add_argument('-f',
                         '--filter',
                        metavar='filter',
+                       required=False,
                        type=str,
                        help='Uma chave para filtrar o resultado JSON')
     parser.add_argument('-c',
                         '--calculate',
                        metavar='calculate',
                        type=bool,
+                       required=False,
                        help='Caso True o resultado é calculado e apresentado, se False apresenta os dados sem tratativas')
     args = parser.parse_args()
 
     auth = auth(os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
-    pprint.pprint(entity_infos(auth, **vars(args)))
+    print(entity_infos(auth, **vars(args)))
