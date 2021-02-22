@@ -13,7 +13,7 @@ def auth(client_id, client_secret):
         'client_secret': client_secret
     }
     request = requests.post(TOKEN_URL, params=token_params)
-    if request.status_code == 200: return request.json()
+    if request.status_code == 200 and request.content != b'': return request.json()
 
 def __list_edges(auth_token):
     EDGE_LIST_URL = 'https://api.mypurecloud.com/api/v2/telephony/providers/edges'
@@ -24,7 +24,7 @@ def __list_edges(auth_token):
         'Authorization': f"Bearer {auth_token}"
     }
     request = requests.get(EDGE_LIST_URL, headers=headers, params=parammeters)
-    if request.status_code == 200: return request.json()
+    if request.status_code == 200 and request.content != b'': return request.json()
 
 def __get_metrics(entity_id, auth_token):
     ENTITY_METRIC_URL = f"https://api.mypurecloud.com/api/v2/telephony/providers/edges/{entity_id}/metrics"
@@ -32,7 +32,7 @@ def __get_metrics(entity_id, auth_token):
         'Authorization': f"Bearer {auth_token}"
     }
     request = requests.get(ENTITY_METRIC_URL, headers=headers)
-    if request.status_code == 200: return request.json()
+    if request.status_code == 200 and request.content != b'': return request.json()
 
 def __get_entity_by_hostname(hostname, entities):
     entity = list(filter(lambda entity: entity.get('name') == hostname, entities))
@@ -44,8 +44,10 @@ def entity_infos(auth, **kwargs):
     if('hostname' in kwargs):
         entity = __get_entity_by_hostname(kwargs.get('hostname'), entities)
         if entity is None: return 'Entity not found'
-        entity.update(__get_metrics(entity.get('id'), auth.get('access_token')))
-        entity.update({ 'trunks': __get_trunks(auth, entity.get('id'))})
+        metrics = __get_metrics(entity.get('id'), auth.get('access_token'))
+        trunks = __get_trunks(auth, entity.get('id'))
+        if metrics: entity.update(metrics)
+        if trunks: entity.update({'trunks': trunks})
         if kwargs.get('calculate'):
             if 'networks' in entity:
                 entity['networks'] = calculate_networks(entity.get('networks'))
@@ -110,7 +112,7 @@ def __get_trunks(auth, edge_id, trunk_type=None):
         parammeters.update({'trunkType': trunk_type})
     
     request = requests.get(EDGE_TRUNKS_LIST_URL, headers=headers, params=parammeters)
-    if request.status_code == 200: return request.json()
+    if request.status_code == 200 and request.content != b'': return request.json()
 
 
 if __name__ == '__main__':
